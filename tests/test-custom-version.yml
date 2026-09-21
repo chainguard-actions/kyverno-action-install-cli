@@ -1,0 +1,40 @@
+name: Test Kyverno CLI installation with custom version and install dir
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          release: v1.11.1
+          install-dir: /tmp/kyverno-custom
+      - name: Assert kyverno binary exists in custom install dir
+        run: |
+          INSTALL_DIR="/tmp/kyverno-custom"
+          echo "Checking for kyverno binary in $INSTALL_DIR"
+          if [ ! -f "$INSTALL_DIR/kyverno" ]; then
+            echo "FAIL: kyverno binary not found at $INSTALL_DIR/kyverno"
+            exit 1
+          fi
+          echo "PASS: kyverno binary found"
+      - name: Assert kyverno is executable
+        run: |
+          INSTALL_DIR="/tmp/kyverno-custom"
+          if [ ! -x "$INSTALL_DIR/kyverno" ]; then
+            echo "FAIL: kyverno binary is not executable"
+            exit 1
+          fi
+          echo "PASS: kyverno binary is executable"
+      - name: Assert kyverno version matches requested
+        run: |
+          VERSION_OUTPUT=$(/tmp/kyverno-custom/kyverno version 2>&1 || true)
+          echo "Version output: $VERSION_OUTPUT"
+          if echo "$VERSION_OUTPUT" | grep -q "1.11.1"; then
+            echo "PASS: version 1.11.1 confirmed"
+          else
+            echo "FAIL: expected version 1.11.1 in output, got: $VERSION_OUTPUT"
+            exit 1
+          fi

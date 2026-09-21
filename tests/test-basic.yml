@@ -1,0 +1,35 @@
+name: Test basic Kyverno CLI installation (default version)
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+      - name: Assert kyverno binary exists in default install dir
+        run: |
+          INSTALL_DIR="$HOME/.kyverno"
+          echo "Checking for kyverno binary in $INSTALL_DIR"
+          if [ ! -f "$INSTALL_DIR/kyverno" ]; then
+            echo "FAIL: kyverno binary not found at $INSTALL_DIR/kyverno"
+            exit 1
+          fi
+          echo "PASS: kyverno binary found"
+      - name: Assert kyverno is executable
+        run: |
+          INSTALL_DIR="$HOME/.kyverno"
+          if [ ! -x "$INSTALL_DIR/kyverno" ]; then
+            echo "FAIL: kyverno binary is not executable"
+            exit 1
+          fi
+          echo "PASS: kyverno binary is executable"
+      - name: Assert kyverno is in PATH and runs
+        run: |
+          if ! command -v kyverno > /dev/null 2>&1; then
+            echo "FAIL: kyverno not found in PATH"
+            exit 1
+          fi
+          echo "PASS: kyverno found in PATH"
+          kyverno version
