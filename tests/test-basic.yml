@@ -1,0 +1,42 @@
+name: Test basic usage - default version
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          release: v1.10.3
+
+      - name: Assert kyverno binary exists
+        run: |
+          INSTALL_DIR="$HOME/.kyverno"
+          echo "Checking for kyverno binary in $INSTALL_DIR"
+          if [ ! -f "$INSTALL_DIR/kyverno" ]; then
+            echo "FAIL: kyverno binary not found at $INSTALL_DIR/kyverno"
+            exit 1
+          fi
+          echo "PASS: kyverno binary found"
+
+      - name: Assert kyverno binary is executable
+        run: |
+          INSTALL_DIR="$HOME/.kyverno"
+          if [ ! -x "$INSTALL_DIR/kyverno" ]; then
+            echo "FAIL: kyverno binary is not executable"
+            exit 1
+          fi
+          echo "PASS: kyverno binary is executable"
+
+      - name: Assert kyverno is on PATH and runs
+        run: |
+          echo "PATH: $PATH"
+          if ! command -v kyverno > /dev/null 2>&1; then
+            echo "FAIL: kyverno not found on PATH"
+            exit 1
+          fi
+          echo "PASS: kyverno found on PATH"
+          kyverno version

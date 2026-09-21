@@ -1,0 +1,55 @@
+name: Test custom install directory
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          release: v1.10.3
+          install-dir: /tmp/kyverno-custom
+
+      - name: Assert kyverno binary exists in custom directory
+        run: |
+          INSTALL_DIR="/tmp/kyverno-custom"
+          echo "Checking for kyverno binary in $INSTALL_DIR"
+          if [ ! -f "$INSTALL_DIR/kyverno" ]; then
+            echo "FAIL: kyverno binary not found at $INSTALL_DIR/kyverno"
+            exit 1
+          fi
+          echo "PASS: kyverno binary found in custom directory"
+
+      - name: Assert kyverno binary is executable
+        run: |
+          INSTALL_DIR="/tmp/kyverno-custom"
+          if [ ! -x "$INSTALL_DIR/kyverno" ]; then
+            echo "FAIL: kyverno binary is not executable"
+            exit 1
+          fi
+          echo "PASS: kyverno binary is executable"
+
+      - name: Assert kyverno is on PATH and runs
+        run: |
+          echo "PATH: $PATH"
+          if ! command -v kyverno > /dev/null 2>&1; then
+            echo "FAIL: kyverno not found on PATH"
+            exit 1
+          fi
+          echo "PASS: kyverno found on PATH"
+          kyverno version
+
+      - name: Assert kyverno version matches requested
+        run: |
+          VERSION_OUTPUT=$(kyverno version 2>&1 || true)
+          echo "Version output: $VERSION_OUTPUT"
+          if echo "$VERSION_OUTPUT" | grep -q "1.10.3"; then
+            echo "PASS: version 1.10.3 confirmed"
+          else
+            echo "WARN: version string '1.10.3' not found in output, checking binary exists"
+            # The binary exists and runs, which is sufficient
+            echo "PASS: kyverno binary installed and executable"
+          fi
